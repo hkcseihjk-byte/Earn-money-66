@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro – Login</title>
+<link rel="stylesheet" href="style.css">
+<style>body{padding-bottom:20px}</style>
+</head>
+<body>
+<div class="auth-wrap fade-in">
+  <div class="auth-top">
+    <div class="alogo">💎</div>
+    <h1>EarnPro</h1>
+    <p>Your premium earning platform</p>
+  </div>
+  <div class="auth-card">
+    <h2>Welcome Back 👋</h2>
+    <p class="sub">Login to your account</p>
+    <div class="igroup ifield-icon">
+      <label>Email</label>
+      <span class="ico">✉️</span>
+      <input type="email" id="em" class="ifield" placeholder="you@email.com">
+    </div>
+    <div class="igroup" style="position:relative">
+      <label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="pw" class="ifield" placeholder="••••••••" style="padding-right:46px">
+        <button id="eye" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:17px">👁️</button>
+      </div>
+    </div>
+    <div style="text-align:right;margin-bottom:16px">
+      <a href="#" class="lnk" id="forgot">Forgot password?</a>
+    </div>
+    <button class="btn btn-primary btn-full" id="loginBtn" style="font-size:16px;padding:15px">🚀 Login</button>
+    <div class="divider"></div>
+    <p style="text-align:center;font-size:14px;color:var(--t3)">No account? <a href="register.html" class="lnk" style="font-weight:700">Create one</a></p>
+  </div>
+</div>
+<script type="module">
+import { auth } from './firebase.js';
+import { signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { toast, showLoader, hideLoader } from './app.js';
+
+onAuthStateChanged(auth, u => { if (u) location.href = 'home.html'; });
+
+document.getElementById('eye').addEventListener('click', function() {
+  const p = document.getElementById('pw');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  this.textContent = p.type === 'password' ? '👁️' : '🙈';
+});
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const em = document.getElementById('em').value.trim();
+  const pw = document.getElementById('pw').value;
+  if (!em || !pw) { toast('Fill all fields', 'err'); return; }
+  showLoader('Logging in...');
+  try {
+    await signInWithEmailAndPassword(auth, em, pw);
+    toast('Welcome back! 🎉', 'ok');
+    setTimeout(() => location.href = 'home.html', 500);
+  } catch(e) {
+    hideLoader();
+    const m = { 'auth/user-not-found':'No account found','auth/wrong-password':'Wrong password','auth/invalid-email':'Invalid email','auth/too-many-requests':'Too many attempts' };
+    toast(m[e.code] || 'Login failed', 'err');
+  }
+});
+
+document.getElementById('forgot').addEventListener('click', async e => {
+  e.preventDefault();
+  const em = document.getElementById('em').value.trim();
+  if (!em) { toast('Enter email first', 'warn'); return; }
+  try { await sendPasswordResetEmail(auth, em); toast('Reset email sent 📧', 'ok'); }
+  catch { toast('Could not send reset email', 'err'); }
+});
+</script>
+</body>
+</html>

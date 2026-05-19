@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro – Wallet</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <div style="font-size:19px;font-weight:800">🏦 Wallet</div>
+  <div class="topbar-balance">💰 <span id="tBal">0.00</span> <span>BDT</span></div>
+</div>
+
+<div class="page fade-in" style="padding-top:12px">
+
+  <!-- BALANCE CARD -->
+  <div class="balance-card" style="margin-bottom:16px">
+    <div class="balance-label">AVAILABLE BALANCE</div>
+    <div class="balance-amount"><span>৳</span><span id="balShow">0.00</span></div>
+    <div style="font-size:12px;color:var(--t2);margin-top:4px">Min. withdraw: ৳<span id="minWd">50</span></div>
+  </div>
+
+  <!-- WITHDRAW FORM -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="stitle" style="margin-bottom:16px">💸 Withdraw</div>
+    <div class="igroup">
+      <label>Payment Method</label>
+      <select class="ifield" id="method">
+        <option value="">Select method</option>
+        <option value="bkash">📱 bKash</option>
+        <option value="nagad">💚 Nagad</option>
+        <option value="rocket">🚀 Rocket</option>
+      </select>
+    </div>
+    <div class="igroup">
+      <label>Account Number</label>
+      <input type="tel" id="accNum" class="ifield" placeholder="01XXXXXXXXX">
+    </div>
+    <div class="igroup">
+      <label>Amount (BDT)</label>
+      <input type="number" id="wdAmt" class="ifield" placeholder="Enter amount">
+    </div>
+    <button class="btn btn-primary btn-full" id="wdBtn" style="padding:14px;font-size:15px">💸 Submit Withdraw Request</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="stitle">📜 Withdraw History</div>
+  <div id="histList"><div class="empty"><div class="ei">📜</div>No withdrawals yet</div></div>
+</div>
+
+<nav class="bnav">
+  <a href="home.html" class="bnav-item" data-p="home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+  </a>
+  <a href="earn.html" class="bnav-item" data-p="earn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Earn
+  </a>
+  <a href="earn.html" class="bnav-center">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </a>
+  <a href="wallet.html" class="bnav-item active" data-p="wallet">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>Wallet
+  </a>
+  <a href="profile.html" class="bnav-item" data-p="profile">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>Profile
+  </a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { doc, getDoc, getDocs, addDoc, collection, query, where, orderBy, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { toast, showLoader, hideLoader, ago } from './app.js';
+
+let uid, balance = 0, minWd = 50;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'login.html'; return; }
+  uid = user.uid;
+
+  const [usnap, setSnap] = await Promise.all([
+    getDoc(doc(db, 'users', uid)),
+    getDocs(collection(db, 'settings'))
+  ]);
+  const u = usnap.data();
+  balance = parseFloat(u.balance || 0);
+  if (!setSnap.empty) minWd = setSnap.docs[0].data().minWithdraw || 50;
+
+  document.getElementById('tBal').textContent = balance.toFixed(2);
+  document.getElementById('balShow').textContent = balance.toFixed(2);
+  document.getElementById('minWd').textContent = minWd;
+
+  loadHistory();
+});
+
+document.getElementById('wdBtn').addEventListener('click', async () => {
+  const method = document.getElementById('method').value;
+  const acc = document.getElementById('accNum').value.trim();
+  const amt = parseFloat(document.getElementById('wdAmt').value);
+
+  if (!method) { toast('Select payment method', 'warn'); return; }
+  if (!acc || acc.length < 10) { toast('Enter valid account number', 'err'); return; }
+  if (!amt || amt < minWd) { toast(`Minimum withdraw is ৳${minWd}`, 'err'); return; }
+  if (amt > balance) { toast('Insufficient balance', 'err'); return; }
+
+  showLoader('Submitting request...');
+  try {
+    await addDoc(collection(db, 'withdraws'), {
+      uid, method, account: acc, amount: amt,
+      status: 'pending', createdAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'users', uid), { balance: increment(-amt) });
+    balance -= amt;
+    document.getElementById('tBal').textContent = balance.toFixed(2);
+    document.getElementById('balShow').textContent = balance.toFixed(2);
+    document.getElementById('method').value = '';
+    document.getElementById('accNum').value = '';
+    document.getElementById('wdAmt').value = '';
+    hideLoader();
+    toast('Withdraw request submitted! ✅', 'ok');
+    loadHistory();
+  } catch(e) {
+    hideLoader();
+    toast('Request failed. Try again.', 'err');
+  }
+});
+
+async function loadHistory() {
+  const snap = await getDocs(query(collection(db, 'withdraws'), where('uid', '==', uid), orderBy('createdAt', 'desc')));
+  const el = document.getElementById('histList');
+  if (snap.empty) { el.innerHTML = '<div class="empty"><div class="ei">📜</div>No withdrawals yet</div>'; return; }
+  const icons = { bkash: '📱', nagad: '💚', rocket: '🚀' };
+  el.innerHTML = '';
+  snap.forEach(d => {
+    const w = d.data();
+    const smap = { pending: 's-pending', approved: 's-approved', rejected: 's-rejected' };
+    el.innerHTML += `<div class="wtx">
+      <div class="wtx-left">
+        <div class="wtx-ico">${icons[w.method] || '💸'}</div>
+        <div>
+          <div class="wtx-method">${w.method?.charAt(0).toUpperCase() + w.method?.slice(1)}</div>
+          <div class="wtx-date">${w.account} · ${ago(w.createdAt)}</div>
+        </div>
+      </div>
+      <div class="wtx-right">
+        <div class="wtx-amount">৳${parseFloat(w.amount).toFixed(2)}</div>
+        <div class="status-chip ${smap[w.status] || 's-pending'}">${(w.status||'pending').toUpperCase()}</div>
+      </div>
+    </div>`;
+  });
+}
+</script>
+</body>
+</html>

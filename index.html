@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="splash" id="splash">
+  <div class="splash-logo">💎</div>
+  <div class="splash-name">EarnPro</div>
+  <div class="splash-sub">Earn · Grow · Withdraw</div>
+  <div class="spinner"></div>
+</div>
+<script type="module">
+import { auth } from './firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+onAuthStateChanged(auth, u => {
+  setTimeout(() => { window.location.href = u ? 'home.html' : 'login.html'; }, 1400);
+});
+</script>
+</body>
+</html>

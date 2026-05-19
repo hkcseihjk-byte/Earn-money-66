@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro – Leaderboard</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.lb-tabs{display:flex;gap:0;background:var(--card);border:1px solid var(--br);border-radius:var(--r2);padding:4px;margin-bottom:16px}
+.lb-tab{flex:1;padding:9px;text-align:center;border-radius:calc(var(--r2) - 4px);font-size:13px;font-weight:600;cursor:pointer;color:var(--t3);transition:all .25s}
+.lb-tab.active{background:linear-gradient(135deg,var(--p),var(--pl));color:#fff}
+.top3{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px;padding:16px 0}
+.top3-item{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.top3-av{border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--brh);position:relative}
+.top3-crown{position:absolute;top:-18px;font-size:22px}
+.top3-name{font-size:11px;font-weight:600;text-align:center;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top3-val{font-size:11px;color:var(--green);font-weight:600}
+.top3-item.p1 .top3-av{width:72px;height:72px;font-size:28px;border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,.3)}
+.top3-item.p2 .top3-av,.top3-item.p3 .top3-av{width:58px;height:58px;font-size:22px}
+.top3-item.p2 .top3-av{border-color:#c0c0c0}
+.top3-item.p3 .top3-av{border-color:#cd7f32}
+.my-rank-bar{background:rgba(124,58,237,.15);border:1px solid var(--brh);border-radius:var(--r2);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div style="font-size:19px;font-weight:800">🏆 Leaderboard</div>
+  <div class="topbar-balance">💰 <span id="tBal">0.00</span> <span>BDT</span></div>
+</div>
+
+<div class="page fade-in" style="padding-top:12px">
+
+  <div class="lb-tabs">
+    <div class="lb-tab active" data-tab="earners" onclick="switchTab('earners', this)">💰 Top Earners</div>
+    <div class="lb-tab" data-tab="referrers" onclick="switchTab('referrers', this)">🔗 Top Referrers</div>
+  </div>
+
+  <!-- TOP 3 PODIUM -->
+  <div class="top3" id="podium"></div>
+
+  <!-- MY RANK -->
+  <div class="my-rank-bar" id="myRankBar">
+    <div style="font-size:13px;color:var(--t2)">Your Rank</div>
+    <div style="font-size:18px;font-weight:800;color:var(--pu)" id="myRankNum">#–</div>
+  </div>
+
+  <!-- REST LIST -->
+  <div class="stitle">All Rankings</div>
+  <div id="lbList"></div>
+</div>
+
+<nav class="bnav">
+  <a href="home.html" class="bnav-item" data-p="home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+  </a>
+  <a href="earn.html" class="bnav-item" data-p="earn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Earn
+  </a>
+  <a href="earn.html" class="bnav-center">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </a>
+  <a href="wallet.html" class="bnav-item" data-p="wallet">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>Wallet
+  </a>
+  <a href="profile.html" class="bnav-item" data-p="profile">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>Profile
+  </a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { doc, getDoc, getDocs, collection, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+let uid;
+const podiumOrder = [1, 0, 2]; // 2nd, 1st, 3rd visual order
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'login.html'; return; }
+  uid = user.uid;
+  const snap = await getDoc(doc(db, 'users', uid));
+  document.getElementById('tBal').textContent = parseFloat(snap.data()?.balance || 0).toFixed(2);
+  loadBoard('totalEarned', '৳');
+});
+
+window.switchTab = (tab, el) => {
+  document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'earners') loadBoard('totalEarned', '৳');
+  else loadBoard('referralCount', '');
+};
+
+async function loadBoard(field, prefix) {
+  const snap = await getDocs(query(collection(db, 'users'), orderBy(field, 'desc'), limit(20)));
+  const users = [];
+  snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+
+  // Podium
+  const podiumEl = document.getElementById('podium');
+  podiumEl.innerHTML = '';
+  const crowns = ['👑', '🥈', '🥉'];
+  const podiumCls = ['p2', 'p1', 'p3'];
+  const heights = ['80px', '110px', '70px'];
+  podiumOrder.forEach((origIdx, visIdx) => {
+    const u = users[origIdx];
+    if (!u) return;
+    const val = parseFloat(u[field] || 0);
+    const isMe = u.id === uid;
+    podiumEl.innerHTML += `<div class="top3-item ${podiumCls[visIdx]}" style="margin-top:${visIdx===1?'0':'30px'}">
+      <div style="position:relative">
+        <div class="top3-crown">${crowns[origIdx]}</div>
+        <div class="top3-av" style="${isMe?'border-color:var(--pl);':''}">
+          ${(u.username||'U')[0].toUpperCase()}
+        </div>
+      </div>
+      <div class="top3-name" title="${u.username}">${u.username||'User'}${isMe?' (You)':''}</div>
+      <div class="top3-val">${prefix}${field==='totalEarned'?val.toFixed(2):val}</div>
+    </div>`;
+  });
+
+  // List
+  const listEl = document.getElementById('lbList');
+  listEl.innerHTML = '';
+  let myRank = '–';
+  users.forEach((u, i) => {
+    if (u.id === uid) myRank = '#' + (i + 1);
+    if (i < 3) return;
+    const val = parseFloat(u[field] || 0);
+    const isMe = u.id === uid;
+    listEl.innerHTML += `<div class="lb-item" style="${isMe?'border-color:var(--brh);background:rgba(124,58,237,.08)':''}">
+      <div class="lb-rank rn">${i + 1}</div>
+      <div class="lb-av" style="font-size:14px">${(u.username||'U')[0].toUpperCase()}</div>
+      <div class="lb-name">${u.username||'User'}${isMe?' <span style="color:var(--pl);font-size:11px">(You)</span>':''}</div>
+      <div class="lb-val">${prefix}${field==='totalEarned'?val.toFixed(2):val}</div>
+    </div>`;
+  });
+  if (users.length <= 3) listEl.innerHTML = '<div class="empty"><div class="ei">🏆</div>Be the first to earn more!</div>';
+
+  document.getElementById('myRankNum').textContent = myRank;
+}
+</script>
+</body>
+</html>

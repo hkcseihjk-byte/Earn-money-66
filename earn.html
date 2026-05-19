@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro – Earn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <div style="font-size:19px;font-weight:800">💰 Earn</div>
+  <div class="topbar-balance">💰 <span id="tBal">0.00</span> <span>BDT</span></div>
+</div>
+
+<div class="page fade-in" style="padding-top:12px">
+
+  <!-- QUICK EARN BANNER -->
+  <div style="background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(168,85,247,.15));border:1px solid var(--brh);border-radius:var(--r3);padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+    <div style="font-size:36px">🚀</div>
+    <div>
+      <div style="font-size:16px;font-weight:800">Start Earning Now!</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:3px">Complete tasks & watch ads for instant rewards</div>
+    </div>
+  </div>
+
+  <!-- WATCH AD -->
+  <div class="stitle">📺 Watch Ads</div>
+  <div class="task-card" id="adCard">
+    <div class="task-ico purple">📺</div>
+    <div class="task-info">
+      <div class="task-name">Watch Video Ad</div>
+      <div class="task-reward">+৳<span id="adReward">1</span> per ad</div>
+      <div class="task-cd" id="adCd">Watch now and earn!</div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="adBtn">Watch</button>
+  </div>
+
+  <!-- DAILY BONUS -->
+  <div class="stitle">🎁 Daily Rewards</div>
+  <div class="task-card">
+    <div class="task-ico gold">🎁</div>
+    <div class="task-info">
+      <div class="task-name">Daily Login Bonus</div>
+      <div class="task-reward">+৳<span id="dailyAmt">2</span> per day</div>
+      <div class="task-cd" id="dailyStatus">Claim once per day</div>
+    </div>
+    <button class="btn btn-gold btn-sm" id="dailyBtn">Claim</button>
+  </div>
+
+  <!-- TASKS FROM FIRESTORE -->
+  <div class="stitle">✅ Tasks</div>
+  <div id="taskList"><div class="empty"><div class="ei">📋</div>Loading tasks...</div></div>
+
+  <!-- REFERRAL -->
+  <div class="stitle" style="margin-top:16px">🔗 Refer & Earn</div>
+  <div class="card card-sm" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="font-size:32px">🔗</div>
+      <div>
+        <div style="font-size:14px;font-weight:700">Invite Friends</div>
+        <div style="font-size:12px;color:var(--t2)">Earn ৳<span id="refBonus">5</span> for each referral</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:8px">Your Referral Link</div>
+    <div class="copy-row">
+      <input type="text" id="refLink" readonly>
+      <button class="copy-btn" id="copyLink">📋</button>
+    </div>
+  </div>
+</div>
+
+<!-- AD MODAL -->
+<div class="modal-ov" id="adModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📺 Watching Ad...</div>
+    <div style="text-align:center;padding:30px 0">
+      <div style="font-size:60px;margin-bottom:16px">📺</div>
+      <div style="font-size:14px;color:var(--t2);margin-bottom:20px">Please wait for the ad to complete</div>
+      <div style="background:var(--bg2);border-radius:100px;padding:14px 24px;display:inline-block;font-size:28px;font-weight:800;color:var(--pu)" id="adTimer">30</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--t3)">seconds remaining</div>
+    </div>
+    <div class="progress" style="margin-bottom:16px"><div class="progress-fill" id="adProgress" style="width:0%"></div></div>
+    <button class="btn btn-ghost btn-full" id="cancelAd">Cancel</button>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-ov" id="taskModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;padding:10px 0 20px">
+      <div id="tmIco" style="font-size:48px;margin-bottom:10px"></div>
+      <div id="tmName" style="font-size:18px;font-weight:800;margin-bottom:4px"></div>
+      <div id="tmReward" style="font-size:14px;color:var(--green);font-weight:600;margin-bottom:12px"></div>
+      <div id="tmDesc" style="font-size:13px;color:var(--t2);margin-bottom:20px"></div>
+      <a id="tmLink" href="#" target="_blank" class="btn btn-primary btn-full" style="margin-bottom:10px">🔗 Go to Task</a>
+      <button id="tmClaim" class="btn btn-success btn-full">✅ Claim Reward</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <a href="home.html" class="bnav-item" data-p="home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+  </a>
+  <a href="earn.html" class="bnav-item active" data-p="earn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Earn
+  </a>
+  <a href="earn.html" class="bnav-center">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </a>
+  <a href="wallet.html" class="bnav-item" data-p="wallet">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>Wallet
+  </a>
+  <a href="profile.html" class="bnav-item" data-p="profile">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>Profile
+  </a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { doc, getDoc, getDocs, updateDoc, arrayUnion, increment, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { toast, openModal, closeModal, copyText, refCode } from './app.js';
+
+let uid, userData, cfg = { adReward: 1, dailyBonus: 2, referralBonus: 5, adCooldown: 30 };
+let adTimer, currentTask = null;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'login.html'; return; }
+  uid = user.uid;
+
+  const [usnap, setSnap] = await Promise.all([
+    getDoc(doc(db, 'users', uid)),
+    getDocs(collection(db, 'settings'))
+  ]);
+  userData = usnap.data();
+  if (!setSnap.empty) cfg = { ...cfg, ...setSnap.docs[0].data() };
+
+  document.getElementById('tBal').textContent = parseFloat(userData.balance || 0).toFixed(2);
+  document.getElementById('adReward').textContent = cfg.adReward || 1;
+  document.getElementById('dailyAmt').textContent = cfg.dailyBonus || 2;
+  document.getElementById('refBonus').textContent = cfg.referralBonus || 5;
+
+  const refLinkEl = document.getElementById('refLink');
+  refLinkEl.value = `${location.origin}/register.html?ref=${refCode(uid)}`;
+  document.getElementById('copyLink').onclick = () => copyText(refLinkEl.value, document.getElementById('copyLink'));
+
+  // Ad cooldown check
+  checkAdCooldown();
+
+  // Daily bonus
+  const today = new Date().toDateString();
+  const lc = userData.dailyBonusClaimed;
+  if (lc && (lc.toDate ? lc.toDate().toDateString() : lc) === today) {
+    document.getElementById('dailyBtn').textContent = '✅ Claimed';
+    document.getElementById('dailyBtn').disabled = true;
+    document.getElementById('dailyStatus').textContent = 'Come back tomorrow!';
+  }
+
+  // Load tasks
+  loadTasks();
+});
+
+function checkAdCooldown() {
+  const last = parseInt(localStorage.getItem(`ep_ad_${uid}`) || '0');
+  const cd = (cfg.adCooldown || 30) * 1000;
+  const elapsed = Date.now() - last;
+  if (elapsed < cd) {
+    const rem = Math.ceil((cd - elapsed) / 1000);
+    document.getElementById('adBtn').disabled = true;
+    document.getElementById('adCd').textContent = `Cooldown: ${rem}s`;
+    const interval = setInterval(() => {
+      const e2 = Date.now() - parseInt(localStorage.getItem(`ep_ad_${uid}`) || '0');
+      if (e2 >= cd) {
+        clearInterval(interval);
+        document.getElementById('adBtn').disabled = false;
+        document.getElementById('adCd').textContent = 'Watch now and earn!';
+      } else {
+        document.getElementById('adCd').textContent = `Cooldown: ${Math.ceil((cd - e2) / 1000)}s`;
+      }
+    }, 1000);
+  }
+}
+
+document.getElementById('adBtn').addEventListener('click', () => {
+  openModal('adModal');
+  let t = cfg.adCooldown || 30;
+  document.getElementById('adTimer').textContent = t;
+  document.getElementById('adProgress').style.width = '0%';
+  const total = t;
+  adTimer = setInterval(async () => {
+    t--;
+    document.getElementById('adTimer').textContent = t;
+    document.getElementById('adProgress').style.width = ((total - t) / total * 100) + '%';
+    if (t <= 0) {
+      clearInterval(adTimer);
+      closeModal('adModal');
+      const reward = cfg.adReward || 1;
+      await updateDoc(doc(db, 'users', uid), {
+        balance: increment(reward), totalEarned: increment(reward), adsWatched: increment(1)
+      });
+      localStorage.setItem(`ep_ad_${uid}`, Date.now());
+      userData.balance = (userData.balance || 0) + reward;
+      document.getElementById('tBal').textContent = parseFloat(userData.balance).toFixed(2);
+      toast(`+৳${reward} Ad reward earned! 📺`, 'ok');
+      document.getElementById('adBtn').disabled = true;
+      document.getElementById('adCd').textContent = `Cooldown: ${cfg.adCooldown || 30}s`;
+      checkAdCooldown();
+    }
+  }, 1000);
+});
+
+document.getElementById('cancelAd').addEventListener('click', () => {
+  clearInterval(adTimer);
+  closeModal('adModal');
+  toast('Ad cancelled', 'warn');
+});
+
+document.getElementById('dailyBtn').addEventListener('click', async () => {
+  const today = new Date().toDateString();
+  const fresh = await getDoc(doc(db, 'users', uid));
+  const lc = fresh.data().dailyBonusClaimed;
+  if (lc && (lc.toDate ? lc.toDate().toDateString() : lc) === today) {
+    toast('Already claimed today!', 'warn'); return;
+  }
+  const bonus = cfg.dailyBonus || 2;
+  await updateDoc(doc(db, 'users', uid), {
+    balance: increment(bonus), totalEarned: increment(bonus), dailyBonusClaimed: serverTimestamp()
+  });
+  document.getElementById('dailyBtn').textContent = '✅ Claimed';
+  document.getElementById('dailyBtn').disabled = true;
+  document.getElementById('dailyStatus').textContent = 'Come back tomorrow!';
+  userData.balance = (userData.balance || 0) + bonus;
+  document.getElementById('tBal').textContent = parseFloat(userData.balance).toFixed(2);
+  toast(`+৳${bonus} Daily bonus! 🎁`, 'ok');
+});
+
+async function loadTasks() {
+  const snap = await getDocs(collection(db, 'tasks'));
+  const list = document.getElementById('taskList');
+  if (snap.empty) { list.innerHTML = '<div class="empty"><div class="ei">📋</div>No tasks available yet</div>'; return; }
+  list.innerHTML = '';
+  const claimed = userData.claimedTasks || [];
+  const iconMap = { social: 'blue', video: 'purple', telegram: 'blue', link: 'green', survey: 'gold' };
+  snap.forEach(d => {
+    const t = d.data(); const tid = d.id;
+    const done = claimed.includes(tid);
+    const col = iconMap[t.type] || 'purple';
+    list.innerHTML += `<div class="task-card">
+      <div class="task-ico ${col}">${t.icon || '✅'}</div>
+      <div class="task-info">
+        <div class="task-name">${t.name}</div>
+        <div class="task-reward">+৳${t.reward}</div>
+        <div class="task-cd">${t.description || ''}</div>
+      </div>
+      <button class="btn btn-${done?'ghost':'primary'} btn-sm" ${done?'disabled':''} onclick="openTask('${tid}','${t.name}','${t.reward}','${t.icon||'✅'}','${t.description||''}','${t.link||''}')">
+        ${done?'✅ Done':'Start'}
+      </button>
+    </div>`;
+  });
+}
+
+window.openTask = (id, name, reward, icon, desc, link) => {
+  currentTask = { id, reward: parseFloat(reward) };
+  document.getElementById('tmIco').textContent = icon;
+  document.getElementById('tmName').textContent = name;
+  document.getElementById('tmReward').textContent = `+৳${reward} reward`;
+  document.getElementById('tmDesc').textContent = desc;
+  document.getElementById('tmLink').href = link || '#';
+  if (!link) document.getElementById('tmLink').style.display = 'none';
+  else document.getElementById('tmLink').style.display = '';
+  openModal('taskModal');
+};
+
+document.getElementById('tmClaim').addEventListener('click', async () => {
+  if (!currentTask) return;
+  const { id, reward } = currentTask;
+  const fresh = await getDoc(doc(db, 'users', uid));
+  if ((fresh.data().claimedTasks || []).includes(id)) {
+    toast('Task already claimed!', 'warn'); closeModal('taskModal'); return;
+  }
+  await updateDoc(doc(db, 'users', uid), {
+    balance: increment(reward), totalEarned: increment(reward), claimedTasks: arrayUnion(id)
+  });
+  userData.balance = (userData.balance || 0) + reward;
+  document.getElementById('tBal').textContent = parseFloat(userData.balance).toFixed(2);
+  toast(`+৳${reward} Task reward! ✅`, 'ok');
+  closeModal('taskModal');
+  loadTasks();
+});
+</script>
+</body>
+</html>

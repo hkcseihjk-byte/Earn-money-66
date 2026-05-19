@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>EarnPro – Home</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-user">
+    <div class="topbar-avatar" id="tAvatar">EP</div>
+    <div>
+      <div class="topbar-name" id="tName">Loading...</div>
+      <div class="topbar-badge" id="tBadge">👤 Free</div>
+    </div>
+  </div>
+  <div class="topbar-balance">💰 <span id="tBal">0.00</span> <span>BDT</span></div>
+</div>
+
+<!-- PAGE -->
+<div class="page fade-in" style="padding-top:12px">
+
+  <!-- NOTICE -->
+  <div class="notice-bar" id="noticeBar" style="display:none">
+    <div class="notice-tag">📢 LIVE</div>
+    <div class="notice-scroll"><div class="notice-txt" id="noticeTxt"></div></div>
+  </div>
+
+  <!-- BALANCE CARD -->
+  <div class="balance-card">
+    <div class="balance-label">TOTAL BALANCE</div>
+    <div class="balance-amount"><span>৳</span><span id="balAmt">0.00</span></div>
+    <div class="balance-actions">
+      <a href="earn.html" class="btn btn-primary"><span>💰</span> Earn</a>
+      <a href="wallet.html" class="btn btn-ghost"><span>🏦</span> Withdraw</a>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-icon">📺</div>
+      <div class="stat-val" id="adsCount">0</div>
+      <div class="stat-lbl">Ads Watched</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val" id="refCount">0</div>
+      <div class="stat-lbl">Referrals</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">💵</div>
+      <div class="stat-val" id="totalEarned">৳0</div>
+      <div class="stat-lbl">Total Earned</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-val" id="myRank">#–</div>
+      <div class="stat-lbl">Your Rank</div>
+    </div>
+  </div>
+
+  <!-- DAILY BONUS -->
+  <div class="card card-sm" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div>
+      <div style="font-size:14px;font-weight:700">🎁 Daily Bonus</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:3px" id="dailyStatus">Claim your daily reward</div>
+    </div>
+    <button class="btn btn-gold btn-sm" id="dailyBtn">Claim ৳<span id="dailyAmt">2</span></button>
+  </div>
+
+  <!-- LEADERBOARD PREVIEW -->
+  <div class="stitle">🏆 Top Earners</div>
+  <div id="lbPreview"></div>
+  <a href="leaderboard.html" style="display:block;text-align:center;margin-bottom:20px;font-size:13px;color:var(--pl);text-decoration:none;font-weight:600">View Full Leaderboard →</a>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <a href="home.html" class="bnav-item active" data-p="home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+  </a>
+  <a href="earn.html" class="bnav-item" data-p="earn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Earn
+  </a>
+  <a href="earn.html" class="bnav-center">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </a>
+  <a href="wallet.html" class="bnav-item" data-p="wallet">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>Wallet
+  </a>
+  <a href="profile.html" class="bnav-item" data-p="profile">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>Profile
+  </a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { doc, getDoc, getDocs, collection, query, orderBy, limit, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { toast, bdt, badgeLabel, badgeClass } from './app.js';
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'login.html'; return; }
+  const uid = user.uid;
+
+  // Load user
+  const usnap = await getDoc(doc(db, 'users', uid));
+  const u = usnap.data();
+
+  document.getElementById('tAvatar').textContent = (u.username || 'EP')[0].toUpperCase();
+  document.getElementById('tName').textContent = u.username || 'User';
+  document.getElementById('tBadge').innerHTML = badgeLabel(u.membership);
+  document.getElementById('tBal').textContent = parseFloat(u.balance || 0).toFixed(2);
+  document.getElementById('balAmt').textContent = parseFloat(u.balance || 0).toFixed(2);
+  document.getElementById('adsCount').textContent = u.adsWatched || 0;
+  document.getElementById('refCount').textContent = u.referralCount || 0;
+  document.getElementById('totalEarned').textContent = '৳' + parseFloat(u.totalEarned || 0).toFixed(0);
+
+  // Settings
+  const setSnap = await getDocs(collection(db, 'settings'));
+  const cfg = setSnap.empty ? { dailyBonus: 2, referralBonus: 5 } : setSnap.docs[0].data();
+  document.getElementById('dailyAmt').textContent = cfg.dailyBonus || 2;
+
+  // Daily bonus
+  const today = new Date().toDateString();
+  const lastClaim = u.dailyBonusClaimed;
+  if (lastClaim && (lastClaim.toDate ? lastClaim.toDate().toDateString() : lastClaim) === today) {
+    document.getElementById('dailyBtn').textContent = '✅ Claimed';
+    document.getElementById('dailyBtn').disabled = true;
+    document.getElementById('dailyStatus').textContent = 'Come back tomorrow!';
+  }
+
+  document.getElementById('dailyBtn').addEventListener('click', async () => {
+    const now = new Date().toDateString();
+    const snap2 = await getDoc(doc(db, 'users', uid));
+    const fresh = snap2.data();
+    const lc = fresh.dailyBonusClaimed;
+    if (lc && (lc.toDate ? lc.toDate().toDateString() : lc) === now) {
+      toast('Already claimed today!', 'warn'); return;
+    }
+    const bonus = cfg.dailyBonus || 2;
+    await updateDoc(doc(db, 'users', uid), {
+      balance: increment(bonus), totalEarned: increment(bonus), dailyBonusClaimed: serverTimestamp()
+    });
+    document.getElementById('dailyBtn').textContent = '✅ Claimed';
+    document.getElementById('dailyBtn').disabled = true;
+    document.getElementById('dailyStatus').textContent = 'Come back tomorrow!';
+    const nb = parseFloat(fresh.balance || 0) + bonus;
+    document.getElementById('balAmt').textContent = nb.toFixed(2);
+    document.getElementById('tBal').textContent = nb.toFixed(2);
+    toast(`+৳${bonus} Daily bonus claimed! 🎉`, 'ok');
+  });
+
+  // Notice
+  const nsnap = await getDocs(query(collection(db, 'notices'), orderBy('createdAt', 'desc'), limit(1)));
+  if (!nsnap.empty) {
+    document.getElementById('noticeTxt').textContent = nsnap.docs[0].data().text;
+    document.getElementById('noticeBar').style.display = 'flex';
+  }
+
+  // Leaderboard preview
+  const lbSnap = await getDocs(query(collection(db, 'users'), orderBy('totalEarned', 'desc'), limit(5)));
+  const lbEl = document.getElementById('lbPreview');
+  const rankIcons = ['👑', '🥈', '🥉'];
+  let myRank = '–';
+  let idx = 0;
+  lbSnap.forEach(d => {
+    idx++;
+    const lu = d.data();
+    if (d.id === uid) myRank = '#' + idx;
+    const rankCls = idx <= 3 ? `r${idx}` : 'rn';
+    lbEl.innerHTML += `<div class="lb-item">
+      <div class="lb-rank ${rankCls}">${rankIcons[idx-1] || idx}</div>
+      <div class="lb-av">${(lu.username||'U')[0].toUpperCase()}</div>
+      <div class="lb-name">${lu.username || 'User'}</div>
+      <div class="lb-val">৳${parseFloat(lu.totalEarned||0).toFixed(2)}</div>
+    </div>`;
+  });
+  document.getElementById('myRank').textContent = myRank;
+
+  await updateDoc(doc(db, 'users', uid), { lastSeen: serverTimestamp() });
+});
+</script>
+</body>
+</html>
